@@ -12,6 +12,9 @@ const FIELD_COLOR = {
   quantum_sensing: '#33d6a6',
 };
 
+const BASE = import.meta.env.BASE_URL;          // '/quantum-brain-map/' (prod) | '/' (dev)
+const url  = p => BASE + p.replace(/^\//, ''); // '/photos/3.jpg' → BASE+'photos/3.jpg'
+
 let maxPapers = 1;
 const buildingObjs = new Map(); // inst → THREE.Group
 const REFERENCE_ALT = 2.6;
@@ -28,10 +31,10 @@ const state = {
 
 async function loadData() {
   const [insts, nodes, countriesGeo, statesGeo] = await Promise.all([
-    fetch('/data/institutions.json').then(r => r.json()),
-    fetch('/data/nodes.json').then(r => r.json()),
-    fetch('/data/countries-50m.geojson').then(r => r.json()),
-    fetch('/data/states-50m.geojson').then(r => r.json()),
+    fetch(url('/data/institutions.json')).then(r => r.json()),
+    fetch(url('/data/nodes.json')).then(r => r.json()),
+    fetch(url('/data/countries-50m.geojson')).then(r => r.json()),
+    fetch(url('/data/states-50m.geojson')).then(r => r.json()),
   ]);
 
   state.institutions = insts.filter(i => i.lat != null && i.lon != null);
@@ -238,7 +241,7 @@ function renderInst(inst) {
 
   const cardsHtml = rs.map(r => {
     const photoHtml = r.photo
-      ? `<img class="rc-photo" src="${r.photo}" alt="${r.name}"
+      ? `<img class="rc-photo" src="${url(r.photo)}" alt="${r.name}"
            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
          <div class="rc-photo-fb" style="display:none">${initials(r.name)}</div>`
       : `<div class="rc-photo-fb" style="display:flex">${initials(r.name)}</div>`;
@@ -314,7 +317,7 @@ function renderDetail(node) {
   const others = node.institutions.filter(i => i.rank !== 1);
 
   const photoHtml = node.photo
-    ? `<img class="dp-photo" src="${node.photo}" alt="${node.name}" />`
+    ? `<img class="dp-photo" src="${url(node.photo)}" alt="${node.name}" />`
     : `<div class="dp-photo-placeholder">${initials(node.name)}</div>`;
 
   const bioHtml = node.bio ? `<div class="dp-bio">${node.bio}</div>` : '';
@@ -468,7 +471,7 @@ function initGlobe() {
 
   globe = Globe()(document.getElementById('globeViz'))
     .globeImageUrl(oceanCanvas.toDataURL())
-    .backgroundImageUrl('/textures/night-sky.png')
+    .backgroundImageUrl(url('/textures/night-sky.png'))
     .atmosphereColor('#4a7ab0')
     .atmosphereAltitude(0.18)
     // 벡터 행정 경계
