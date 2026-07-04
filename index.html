@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quantum Brain Map — 양자기술 인재 지도</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="globeViz"></div>
+
+  <header id="topbar">
+    <div id="brand">
+      <span class="brand-title">Quantum Brain Map</span>
+      <span class="brand-sub">양자컴퓨팅 · 양자통신 · 양자센싱 글로벌 인재 지도</span>
+    </div>
+    <div id="searchWrap">
+      <input id="searchBox" type="text" placeholder="기관명, 연구자, 국가로 검색..." autocomplete="off" />
+      <div id="searchResults"></div>
+    </div>
+    <div id="stats"></div>
+    <button id="filterToggle" aria-label="필터">☰</button>
+  </header>
+
+  <aside id="filterPanel">
+    <div class="filter-group">
+      <div class="filter-title">분야</div>
+      <label><input type="checkbox" class="f-field" value="quantum_computing" checked><span class="dot" style="background:#4f8cff"></span>양자컴퓨팅</label>
+      <label><input type="checkbox" class="f-field" value="quantum_communication" checked><span class="dot" style="background:#a86bff"></span>양자통신</label>
+      <label><input type="checkbox" class="f-field" value="quantum_sensing" checked><span class="dot" style="background:#33d6a6"></span>양자센싱</label>
+    </div>
+    <div class="filter-group">
+      <div class="filter-title">등급</div>
+      <label><input type="checkbox" class="f-tier" value="global_top1" checked>글로벌 상위 1%</label>
+      <label><input type="checkbox" class="f-tier" value="korea_top10" checked>한국 상위 10%</label>
+    </div>
+  </aside>
+
+  <!-- 기관 패널 -->
+  <div id="instPanel" class="side-panel hidden">
+    <div class="panel-topbar">
+      <span></span>
+      <button class="panel-close" id="closeInst">&times;</button>
+    </div>
+    <div id="instContent" class="panel-body"></div>
+  </div>
+
+  <!-- 연구자 상세 패널 -->
+  <div id="detailPanel" class="side-panel hidden">
+    <div class="panel-topbar">
+      <button id="backToInst" class="back-btn">← 기관으로</button>
+      <button class="panel-close" id="closeDetail">&times;</button>
+    </div>
+    <div id="detailContent" class="panel-body"></div>
+  </div>
+
+  <div id="loadingOverlay">
+    <div class="loading-inner">
+      <div class="spinner"></div>
+      <div>양자 인재 지도를 불러오는 중...</div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
