@@ -1,5 +1,5 @@
-import Globe from 'globe.gl';
-import * as THREE from 'three';
+import * as THREE from 'three'; // importmap → CDN jsdelivr
+// Globe: globe.gl CDN UMD 스크립트가 window.Globe 로 노출
 
 const FIELD_LABEL = {
   quantum_computing: '양자컴퓨팅',
@@ -12,7 +12,8 @@ const FIELD_COLOR = {
   quantum_sensing: '#33d6a6',
 };
 
-const BASE = import.meta.env.BASE_URL;          // '/quantum-brain-map/' (prod) | '/' (dev)
+// HTML 파일 위치 기준으로 base 경로를 자동 감지 (Vite 불필요)
+const BASE = new URL('.', document.baseURI).pathname;
 const url  = p => BASE + p.replace(/^\//, ''); // '/photos/3.jpg' → BASE+'photos/3.jpg'
 
 let maxPapers = 1;

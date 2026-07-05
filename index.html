@@ -4,8 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Quantum Brain Map — 양자기술 인재 지도</title>
-  <script type="module" crossorigin src="/quantum-brain-map/assets/index-2HTaWX4v.js"></script>
-  <link rel="stylesheet" crossorigin href="/quantum-brain-map/assets/index-D7fcr5kk.css">
+  <link rel="stylesheet" href="./style.css" />
+  <script type="importmap">
+    {"imports": {"three": "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.min.js"}}
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.46.1/dist/globe.gl.min.js"></script>
 </head>
 <body>
   <div id="globeViz"></div>
@@ -62,5 +65,6 @@
     </div>
   </div>
 
+  <script type="module" src="./main.js"></script>
 </body>
 </html>
