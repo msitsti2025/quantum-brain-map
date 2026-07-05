@@ -582,30 +582,15 @@ function setupFilterToggle() {
 }
 
 async function main() {
-  try {
-    console.log('[1] loadData 시작');
-    await loadData();
-    console.log('[2] initGlobe 시작');
-    initGlobe();
-    console.log('[3] refreshGlobe');
-    refreshGlobe();
-    console.log('[4] setup 시작');
-    setupSearch();
-    setupFilters();
-    setupFilterToggle();
-    setupCoauthorToggle();
-    setupPanelControls();
-    console.log('[5] 완료 — 로딩 숨김');
-    document.getElementById('loadingOverlay').classList.add('hide');
-  } catch (err) {
-    console.error('초기화 오류:', err);
-    const ol = document.getElementById('loadingOverlay');
-    if (ol) ol.innerHTML =
-      `<div style="color:#f88;padding:30px;text-align:center;font-size:14px">
-        ❌ 오류: ${err.message}<br/><br/>
-        <small>${err.stack || ''}</small>
-      </div>`;
-  }
+  await loadData();
+  initGlobe();
+  refreshGlobe();
+  setupSearch();
+  setupFilters();
+  setupFilterToggle();
+  setupCoauthorToggle();
+  setupPanelControls();
+  document.getElementById('loadingOverlay').classList.add('hide');
 }
 
 main();
