@@ -7,9 +7,14 @@ const FIELD_LABEL = {
   quantum_sensing: '양자센싱',
 };
 const FIELD_COLOR = {
-  quantum_computing: '#4f8cff',
-  quantum_communication: '#a86bff',
-  quantum_sensing: '#33d6a6',
+  quantum_computing:    '#f58020',   // 오렌지
+  quantum_communication:'#78c83c',   // 연두
+  quantum_sensing:      '#28bce0',   // 하늘
+};
+const COAUTHOR_ARC_COLOR = {
+  quantum_computing:    'rgba(245,140,60,0.9)',
+  quantum_communication:'rgba(130,210,70,0.9)',
+  quantum_sensing:      'rgba(60,195,230,0.9)',
 };
 
 // HTML 파일 위치 기준으로 base 경로를 자동 감지 (Vite 불필요)
@@ -20,10 +25,14 @@ let maxPapers = 1;
 const buildingObjs = new Map(); // inst → THREE.Group
 const REFERENCE_ALT = 2.6;
 
+const COAUTHOR_COUNTRIES = ['Korea', 'Japan', 'China', 'USA', 'France', 'UK', 'Germany'];
+
 const state = {
   institutions: [],
   nodeById: new Map(),
   geoPolygons: [],
+  coauthorEdges: [],
+  activeCountries: new Set(),
   activeFields: new Set(['quantum_computing', 'quantum_communication', 'quantum_sensing']),
   activeTiers: new Set(['global_top1', 'korea_top10']),
   selectedInst: null,
@@ -31,18 +40,19 @@ const state = {
 };
 
 async function loadData() {
-  const [insts, nodes, countriesGeo, statesGeo] = await Promise.all([
+  const [insts, nodes, countriesGeo, statesGeo, coauthorEdges] = await Promise.all([
     fetch(url('/data/institutions.json')).then(r => r.json()),
     fetch(url('/data/nodes.json')).then(r => r.json()),
     fetch(url('/data/countries-50m.geojson')).then(r => r.json()),
     fetch(url('/data/states-50m.geojson')).then(r => r.json()),
+    fetch(url('/data/coauthor_edges.json')).then(r => r.json()).catch(() => []),
   ]);
 
-  state.institutions = insts.filter(i => i.lat != null && i.lon != null);
-  state.nodeById    = new Map(nodes.map(n => [n.seq, n]));
+  state.institutions  = insts.filter(i => i.lat != null && i.lon != null);
+  state.nodeById      = new Map(nodes.map(n => [n.seq, n]));
+  state.coauthorEdges = coauthorEdges;
   maxPapers = Math.max(1, ...state.institutions.map(i => i.papers_total || 0));
 
-  // 두 레이어를 하나의 배열로 합침 (state 먼저, country 나중에 위에 그려짐)
   state.geoPolygons = [
     ...statesGeo.features.map(f => ({ ...f, _level: 'state' })),
     ...countriesGeo.features.map(f => ({ ...f, _level: 'country' })),
@@ -481,6 +491,28 @@ function initGlobe() {
     .polygonSideColor(() => '#020810')
     .polygonStrokeColor(f => f._level === 'country' ? '#3a6ab0' : '#1a3460')
     .polygonAltitude(f => f._level === 'country' ? 0.001 : 0.0006)
+    // 공동저자 아크
+    .arcsData([])
+    .arcStartLat(d => d.source_lat)
+    .arcStartLng(d => d.source_lng)
+    .arcEndLat(d => d.target_lat)
+    .arcEndLng(d => d.target_lng)
+    .arcColor(d => {
+      const c = COAUTHOR_ARC_COLOR[d.source_field] || 'rgba(180,180,255,0.8)';
+      return [c, c];
+    })
+    .arcLabel(d => `
+      <div class="scene-tooltip">
+        <b>${d.source_name}</b>
+        <span style="color:#aaa"> ↔ </span>
+        <b>${d.target_name}</b><br/>
+        <span style="color:#9ab">공동논문 ${d.weight}편</span>
+      </div>`)
+    .arcAltitudeAutoScale(0.3)
+    .arcStroke(0.25)
+    .arcDashLength(1)
+    .arcDashGap(0)
+    .arcDashAnimateTime(0)
     // 3D 빌딩
     .objectLat('lat')
     .objectLng('lon')
@@ -506,11 +538,41 @@ function initGlobe() {
   controls.enableDamping   = true;
   controls.minPolarAngle   = 0;
   controls.maxPolarAngle   = Math.PI;
-  controls.addEventListener('change', updateBuildingScales);
+  controls.addEventListener('change', () => {
+    updateBuildingScales();
+    updateArcStroke();
+  });
 
   document.getElementById('globeViz').addEventListener('pointerdown', () => {
     controls.autoRotate = false;
   }, { once: true });
+}
+
+function updateCoauthorArcs() {
+  globe.arcsData(
+    state.coauthorEdges.filter(e =>
+      state.activeCountries.has(e.source_country) &&
+      e.source_lat != null && e.source_lng != null &&
+      e.target_lat != null && e.target_lng != null
+    )
+  );
+}
+
+function updateArcStroke() {
+  const alt    = globe.pointOfView().altitude;
+  const stroke = Math.max(0.04, 0.28 * (alt / REFERENCE_ALT));
+  globe.arcStroke(stroke);
+}
+
+function setupCoauthorToggle() {
+  document.querySelectorAll('.f-country').forEach(cb => {
+    cb.addEventListener('change', () => {
+      cb.checked
+        ? state.activeCountries.add(cb.value)
+        : state.activeCountries.delete(cb.value);
+      updateCoauthorArcs();
+    });
+  });
 }
 
 function setupFilterToggle() {
@@ -520,14 +582,30 @@ function setupFilterToggle() {
 }
 
 async function main() {
-  await loadData();
-  initGlobe();
-  refreshGlobe();
-  setupSearch();
-  setupFilters();
-  setupFilterToggle();
-  setupPanelControls();
-  document.getElementById('loadingOverlay').classList.add('hide');
+  try {
+    console.log('[1] loadData 시작');
+    await loadData();
+    console.log('[2] initGlobe 시작');
+    initGlobe();
+    console.log('[3] refreshGlobe');
+    refreshGlobe();
+    console.log('[4] setup 시작');
+    setupSearch();
+    setupFilters();
+    setupFilterToggle();
+    setupCoauthorToggle();
+    setupPanelControls();
+    console.log('[5] 완료 — 로딩 숨김');
+    document.getElementById('loadingOverlay').classList.add('hide');
+  } catch (err) {
+    console.error('초기화 오류:', err);
+    const ol = document.getElementById('loadingOverlay');
+    if (ol) ol.innerHTML =
+      `<div style="color:#f88;padding:30px;text-align:center;font-size:14px">
+        ❌ 오류: ${err.message}<br/><br/>
+        <small>${err.stack || ''}</small>
+      </div>`;
+  }
 }
 
 main();
